@@ -1,0 +1,2 @@
+jarvis-project/backend/dist/Jarvis filter=lfs diff=lfs merge=lfs -text
+*.pkg filter=lfs diff=lfs merge=lfs -text

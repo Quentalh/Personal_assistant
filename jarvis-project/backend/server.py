@@ -272,7 +272,8 @@ def execute_task(command):
 # --- MAIN LOOP ---
 def jarvis_main_loop():
     print("🧠 JARVIS BRAIN ONLINE")
-    speak("System Online.")
+    #speak("System Online.")
+    socketio.emit('status', {'status': 'IDLE', 'text': ''})
     
     while True:
         stop_event.clear()

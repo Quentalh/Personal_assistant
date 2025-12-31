@@ -1,0 +1,4 @@
+jarvis-project/backend/dist filter=lfs diff=lfs merge=lfs -text
+jarvis-project/backend/build filter=lfs diff=lfs merge=lfs -text
+jarvis-project/backend/dist/** filter=lfs diff=lfs merge=lfs -text
+jarvis-project/backend/build/** filter=lfs diff=lfs merge=lfs -text

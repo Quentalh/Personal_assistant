@@ -11,80 +11,61 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a { font-weight: 500; color: #646cff; text-decoration: inherit; }
-a:hover { color: #535bf2; }
-
 body {
   margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
+  /* REMOVED min-width: 320px to fit small windows */
   background-color: transparent !important;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden; /* Prevents scrollbars */
-  font-family: Courier New, Courier, monospace;
+  overflow: hidden;
 }
 
-/* --- THE FIX: Center the Root Container --- */
 #root {
   width: 100%;
   height: 100%;
   background-color: transparent !important;
-  display: flex;             /* <--- ADDED THIS */
-  justify-content: center;   /* <--- ADDED THIS */
-  align-items: center;       /* <--- ADDED THIS */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-h1 { font-size: 3.2em; line-height: 1.1; }
-
-button {
-  border-radius: 8px; border: 1px solid transparent; padding: .6em 1.2em;
-  font-size: 1em; font-weight: 500; font-family: inherit;
-  background-color: #1a1a1a; cursor: pointer; transition: border-color .25s;
-}
-button:hover { border-color: #646cff; }
-button:focus, button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
-
-@media(prefers-color-scheme:light) {
-  :root { color: #213547; background-color: transparent !important; }
-  a:hover { color: #747bff; }
-  button { background-color: #f9f9f9; }
-}
-
-.container { text-align: center; }
-
-/* Hide text completely */
-.status-text {
-  display: none !important;
-}
+/* Hide text */
+.status-text { display: none !important; }
 
 .orb {
-  width: 120px; height: 120px; border-radius: 50%; position: relative;
-  transition: all .5s ease-in-out; background: #000c; border: 2px solid #333;
-  display: flex; justify-content: center; align-items: center;
-  /* Add margin to ensure safe zone for glow effects */
-  margin: 60px; 
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  position: relative;
+  background: #000c;
+  border: 2px solid #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all .5s ease-in-out;
+  /* Removed large margin, flex centers it now */
 }
 
 /* Hide orb initially */
-.orb-hidden {
-  opacity: 0 !important;
-  transform: scale(0) !important;
-}
+.orb-hidden { opacity: 0 !important; transform: scale(0) !important; }
 
+/* Effects */
 .orb-listening {
-  border-color: #0f0; box-shadow: 0 0 30px #0f0, inset 0 0 20px #0f0;
+  border-color: #0f0;
+  box-shadow: 0 0 30px #0f0, inset 0 0 20px #0f0;
   transform: scale(1.1);
 }
-
 .orb-thinking {
-  border-color: #00f; box-shadow: 0 0 30px #00f;
+  border-color: #00f;
+  box-shadow: 0 0 30px #00f;
   animation: spin 2s linear infinite;
 }
-
 .orb-speaking {
-  border-color: red; box-shadow: 0 0 40px red, inset 0 0 30px red;
+  border-color: red;
+  box-shadow: 0 0 40px red, inset 0 0 30px red;
   animation: throb .5s infinite alternate;
 }
 

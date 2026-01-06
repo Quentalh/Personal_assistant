@@ -1,9 +1,55 @@
 import sys
 import os
-import threading
-import time
 import subprocess
+import time
+
+def ensure_ghost_environment():
+    """Checks if the Ghost Screen (:99) is running. If not, starts it."""
+    print("👻 Checking Ghost Environment...")
+    
+    # 1. Check if Display :99 is active using xdpyinfo
+    # We send output to DEVNULL to keep the terminal clean
+    check = subprocess.run(
+        "xdpyinfo -display :99", 
+        shell=True, 
+        stdout=subprocess.DEVNULL, 
+        stderr=subprocess.DEVNULL
+    )
+    
+    if check.returncode == 0:
+        print("✅ Ghost Environment is already running.")
+        return
+    
+    print("❌ Ghost not found. Starting it now...")
+    
+    # 2. Find the script path relative to the executable
+    if getattr(sys, 'frozen', False):
+        # If running as compiled Jarvis app
+        base_path = os.path.dirname(sys.executable)
+    else:
+        # If running as python script
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
+    script_path = os.path.join(base_path, "ghost_spotify.sh")
+    
+    # 3. Launch the script
+    if os.path.exists(script_path):
+        try:
+            # We use Popen so it runs in the background
+            subprocess.Popen([script_path], cwd=base_path)
+            
+            # Give it 5 seconds to boot up Xvfb and Spotify
+            print("⏳ Waiting 5s for Spotify to load...")
+            time.sleep(5) 
+            print("✅ Ghost Environment Started!")
+        except Exception as e:
+            print(f"⚠️ Failed to start script: {e}")
+    else:
+        print(f"⚠️ Could not find script at: {script_path}")
+        print("Please make sure ghost_spotify.sh is in the same folder as Jarvis.")
+
 import datetime
+import threading
 import re
 from flask import Flask, send_from_directory
 from flask_socketio import SocketIO
@@ -196,22 +242,32 @@ def execute_task(command):
         speak("Next.")
         return
 
-    # 3. SPOTIFY SEARCH
+# 3. SPOTIFY SEARCH (GHOST WORKER METHOD)
     if "play" in command and "spotify" in command:
         song_name = command.replace("play", "").replace("on spotify", "").strip()
-        speak(f"Searching for {song_name}")
+        speak(f"Queuing {song_name}")
+        
         try:
-            game_window_id = subprocess.check_output(["xdotool", "getactivewindow"]).strip().decode()
-            subprocess.Popen(["gtk-launch", "spotify"])
-            time.sleep(1.5)
-            pyautogui.hotkey('ctrl', 'l')
-            pyautogui.write(song_name, interval=0.05)
-            pyautogui.press('enter')
-            time.sleep(0.5)
-            pyautogui.press('enter')
-            subprocess.Popen(["xdotool", "windowactivate", game_window_id])
-        except:
-            speak("Error switching windows.")
+            # SMART PATH FIX:
+            # 1. Get the folder where the running 'Jarvis' executable lives
+            if getattr(sys, 'frozen', False):
+                # If running as compiled app (PyInstaller)
+                application_path = os.path.dirname(sys.executable)
+            else:
+                # If running as python script
+                application_path = os.path.dirname(os.path.abspath(__file__))
+
+            # 2. Combine with the worker name
+            worker_path = os.path.join(application_path, "spotify_worker")
+            
+            # 3. Run it
+            subprocess.Popen(
+                [worker_path, song_name],
+                env={**os.environ, "DISPLAY": ":99"} 
+            )
+        except Exception as e:
+            print(f"Failed to launch worker: {e}")
+            speak("I couldn't start the background task.")
         return
 
     # 4. MATH
@@ -242,7 +298,8 @@ def execute_task(command):
             "browser": ["firefox-developer-edition", "firefox"],
             "terminal": ["gnome-terminal", "heitor"], 
             "files": ["nemo", "home"], 
-            "spotify": ["spotify", "spotify"]
+            "spotify": ["spotify", "spotify"],
+            "whatsapp": ["flatpak run com.rtosta.zapzap", "whatsapp"]
         }
         if raw_app_name in app_map:
             cmd, visual_keyword = app_map[raw_app_name]
@@ -292,7 +349,9 @@ def jarvis_main_loop():
         change_status("HIDDEN")
 
 def start_flask():
-    socketio.run(app, port=5000, debug=False, use_reloader=False)
+    ensure_ghost_environment()
+    # ADD allow_unsafe_werkzeug=True TO FIX THE CRASH
+    socketio.run(app, port=5000, debug=False, use_reloader=False, allow_unsafe_werkzeug=True)
 
 if __name__ == '__main__':
     # 1. Start Threads
@@ -304,28 +363,48 @@ if __name__ == '__main__':
     t_server.daemon = True
     t_server.start()
 
+    # --- ADD THIS DELAY ---
+    print("⏳ Waiting for server to start...")
+    time.sleep(2.0)  # Gives Flask 2 seconds to initialize port 5000
+    # ----------------------
+
     # 2. Debug Information
-    print("🚀 Launching DEBUG Window...")
+    print("🚀 Launching Jarvis...")
     if os.path.exists(gui_folder):
         print(f"✅ GUI Path found: {gui_folder}")
-        print(f"📂 Files inside: {os.listdir(gui_folder)}")
     else:
         print(f"❌ ERROR: GUI Path NOT found at: {gui_folder}")
 
-    # 3. Create Window (Production Mode)
-    # Changed title from 'Jarvis DEBUG' to 'Jarvis'
-    # You can change transparent=True and frameless=True later if you want the "Orb" look
-    # 3. Create Window (Siri Mode)
+    # 3. Define Window Size
+    ORB_WIDTH = 200
+    ORB_HEIGHT = 200
+    
+    # Define Icon Path
+
+
+    # 4. Create Window
     window = webview.create_window(
         'Jarvis', 
-        'http://127.0.0.1:5000',
-        width=800,
-        height=600,
-        transparent=True,    # <--- Critical for Orb look
-        frameless=True,      # <--- Removes borders
-        on_top=True          # <--- Keeps it above everything
+        'http://127.0.0.1:5000',  # Now this URL should be ready!
+        width=ORB_WIDTH,
+        height=ORB_HEIGHT,
+        transparent=True,
+        frameless=True,
+        on_top=True,
     )
 
-    # 4. START THE APP (Production Mode)
-    # debug=False disables the Inspection/Right-Click menu
-    webview.start(debug=False)
+    # 5. Snap to Right Logic
+    def move_to_right():
+        time.sleep(1) 
+        try:
+            screens = webview.screens
+            screen = screens[0]
+            x_pos = screen.width - ORB_WIDTH
+            y_pos = (screen.height - ORB_HEIGHT) // 2
+            window.move(int(x_pos), int(y_pos))
+        except Exception as e:
+            print(f"❌ Could not move window: {e}")
+
+    # 6. START
+    webview.start(func=move_to_right, debug=False)
+    os._exit(0)
